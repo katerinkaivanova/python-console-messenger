@@ -1,0 +1,11 @@
+{
+    "orders": [
+        {
+            "buyer": "Ivanov I. I.",
+            "date": "24.09.2017",
+            "item": "printer",
+            "price": "6700",
+            "quantity": "1"
+        }
+    ]
+}
