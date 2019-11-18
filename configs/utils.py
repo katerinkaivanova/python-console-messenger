@@ -1,6 +1,6 @@
 import json
 
-from common.variables import *
+from configs.default import *
 
 
 def get_message(sock):

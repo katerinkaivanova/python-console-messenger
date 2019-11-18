@@ -2,8 +2,8 @@ import sys
 import json
 
 from socket import *
-from common.variables import *
-from common.utils import *
+from configs.default import *
+from configs.utils import *
 
 
 def presence_responce(presence):

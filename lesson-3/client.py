@@ -3,8 +3,8 @@ import json
 import time
 
 from socket import  *
-from common.variables import *
-from common.utils import *
+from configs.default import *
+from configs.utils import *
 
 
 def create_presence(account_name='Guest'):
