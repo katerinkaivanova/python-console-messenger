@@ -2,7 +2,7 @@ import sys
 import json
 import time
 
-from socket import  *
+from socket import *
 from configs.default import *
 from configs.utils import *
 
@@ -23,7 +23,7 @@ def create_presence(account_name='Guest'):
     return out
 
 
-def parse_answer(message):
+def parse_server_msg(message):
     """
     Разбор сообщения от сервера
     :param message: словарь сообщения
@@ -64,7 +64,7 @@ if __name__ == '__main__':
 
     try:
         # Получает и разбирает сообщение от сервера
-        answer = parse_answer(get_message(client))
+        answer = parse_server_msg(get_message(client))
         print(answer)
     except (ValueError, json.JSONDecodeError):
         print('Не удалось декодировать сообщение сервера.')

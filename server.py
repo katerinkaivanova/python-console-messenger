@@ -6,7 +6,7 @@ from configs.default import *
 from configs.utils import *
 
 
-def presence_responce(presence):
+def parse_client_msg(presence):
     """
     Обработчик сообщений клиентов
     :param presence: словарь сообщения
@@ -59,11 +59,11 @@ if __name__ == '__main__':
 
         try:
             # Принимает сообщение от клиента
-            presense = get_message(client)
-            print(presense)
+            message_from_client = get_message(client)
+            print(message_from_client)
 
             # Формирует ответ клиенту
-            response = presence_responce(presense)
+            response = parse_client_msg(message_from_client)
             send_message(client, response)
 
             client.close()
