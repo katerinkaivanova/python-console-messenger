@@ -11,7 +11,7 @@ sys.path.append(os.path.join(os.getcwd(), '..'))
 class TestClass(unittest.TestCase):
     # тестирует функцию create_presence()
     # корректный запрос
-    def test_def_presence(self):
+    def test_presence(self):
         test = create_presence()
         test[TIME] = 1.1  # присваиваем значения для прохождения теста
         self.assertEqual(test, {ACTION: PRESENCE, TIME: 1.1, USER: {ACCOUNT_NAME: 'Guest'}})
@@ -32,4 +32,3 @@ class TestClass(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

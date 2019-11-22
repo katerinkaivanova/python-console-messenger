@@ -59,7 +59,7 @@ if __name__ == '__main__':
 
         try:
             # Принимает сообщение от клиента
-            message_from_client = get_message(client)
+            message_from_client = receive_message(client)
             print(message_from_client)
 
             # Формирует ответ клиенту

@@ -64,7 +64,7 @@ if __name__ == '__main__':
 
     try:
         # Получает и разбирает сообщение от сервера
-        answer = parse_server_msg(get_message(client))
+        answer = parse_server_msg(receive_message(client))
         print(answer)
     except (ValueError, json.JSONDecodeError):
         print('Не удалось декодировать сообщение сервера.')
