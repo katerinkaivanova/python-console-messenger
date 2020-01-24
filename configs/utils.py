@@ -3,7 +3,7 @@ import json
 from configs.default import *
 
 
-def get_message(sock):
+def receive_message(sock):
     """
     Получение сообщения
     :param sock: сокет
