@@ -1,18 +1,21 @@
 import sys
 import json
 import time
+import socket
 import logging
 import logs.client_log_config
 
-from socket import *
-from configs.default import *
-from configs.utils import *
+from configs.default import ACTION, TIME, USER, ACCOUNT_NAME, RESPONSE, PRESENCE, ERROR, \
+                            DEFAULT_IP_ADDRESS, DEFAULT_PORT
+from configs.utils import send_message, receive_message
+from decorators.decorators import my_logger
 
 
 # Инициализация клиентского логера
 client_logger = logging.getLogger('client')
 
 
+@my_logger
 def create_presence(account_name='Guest'):
     """
     Формирование сообщения о присутствии
@@ -30,6 +33,7 @@ def create_presence(account_name='Guest'):
     return out
 
 
+@my_logger
 def parse_server_msg(message):
     """
     Разбор сообщения от сервера
@@ -48,7 +52,7 @@ def parse_server_msg(message):
 if __name__ == '__main__':
 
     # Создается TCP-сокет клиента
-    client_tcp = socket(AF_INET, SOCK_STREAM)
+    client_tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     # Получаем ip-адрес и порт из командной строки
     try:

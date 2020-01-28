@@ -3,7 +3,7 @@ import os
 import unittest
 
 from server import parse_client_msg
-from configs.utils import *
+from configs.default import ACTION, TIME, USER, ACCOUNT_NAME, RESPONSE, PRESENCE, ERROR
 
 sys.path.append(os.path.join(os.getcwd(), '..'))
 
