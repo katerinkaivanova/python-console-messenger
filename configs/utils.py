@@ -1,6 +1,6 @@
 import json
 
-from configs.default import *
+from configs.default import ENCODING, MAX_PACKAGE_LENGTH
 
 
 def receive_message(sock):

@@ -1,17 +1,20 @@
 import sys
 import json
+import socket
 import logging
 import logs.server_log_config
 
-from socket import *
-from configs.default import *
-from configs.utils import *
+from configs.default import ACTION, TIME, USER, ACCOUNT_NAME, RESPONSE, PRESENCE, ERROR, \
+                            DEFAULT_PORT, MAX_CONNECTIONS
+from configs.utils import send_message, receive_message
+from decorators.decorators import MyLogger
 
 
 # Инициализация серверного логера
 server_logger = logging.getLogger('server')
 
 
+@MyLogger
 def parse_client_msg(presence):
     """
     Обработчик сообщений клиентов
@@ -34,7 +37,7 @@ def parse_client_msg(presence):
 if __name__ == '__main__':
 
     # Создает TCP-сокет сервера
-    server_tcp = socket(AF_INET, SOCK_STREAM)
+    server_tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     # Извлекает ip-адрес из командной строки
     try:
