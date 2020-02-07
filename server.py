@@ -1,93 +1,160 @@
 import sys
 import json
 import socket
+import select
+import argparse
+import time
 import logging
 import logs.server_log_config
 
-from configs.default import ACTION, TIME, USER, ACCOUNT_NAME, RESPONSE, PRESENCE, ERROR, \
-                            DEFAULT_PORT, MAX_CONNECTIONS
+from configs.default import ACTION, TIME, USER, ACCOUNT_NAME, SENDER, RESPONSE, PRESENCE, ERROR, \
+    DEFAULT_PORT, MAX_CONNECTIONS, MESSAGE, MESSAGE_TEXT
 from configs.utils import send_message, receive_message
 from decorators.decorators import MyLogger
-
 
 # Инициализация серверного логера
 server_logger = logging.getLogger('server')
 
 
 @MyLogger
-def parse_client_msg(presence):
+def parse_client_msg(message, messages_list, sock):
     """
     Обработчик сообщений клиентов
-    :param presence: словарь сообщения
+    :param message: словарь сообщения
+    :param messages_list: список сообщений
+    :param sock: клиентский сокет
     :return: словарь ответа
     """
-    server_logger.debug(f'Разбор сообщения от клиента : {presence}')
-    if ACTION in presence and presence[ACTION] == PRESENCE and TIME in presence and USER in presence and \
-            presence[USER][ACCOUNT_NAME] == 'Guest':
-        return {
+    server_logger.debug(f'Разбор сообщения от клиента: {message}')
+    print(f'Разбор сообщения от клиента: {message}')
+
+    # возвращает сообщение о присутствии
+    if ACTION in message and message[ACTION] == PRESENCE and TIME in message and \
+            USER in message and message[USER][ACCOUNT_NAME] == 'Guest':
+        send_message(sock, {
             RESPONSE: 200
-        }
+        })
+        return
+
+    # формирует очередь сообщений
+    elif ACTION in message and message[ACTION] == MESSAGE and TIME in message and \
+            USER in message and MESSAGE_TEXT in message:
+
+        messages_list.append((message[USER][ACCOUNT_NAME], message[MESSAGE_TEXT]))
+
+        return messages_list
+
+    # возвращает сообщение об ошибке
     else:
-        return {
+        send_message(sock, {
             RESPONSE: 400,
             ERROR: 'Bad Request'
-        }
+        })
+        return
+
+
+@MyLogger
+def parse_cmd_arguments():
+    """
+    Парсер аргументов командной строки
+    :return: ip-адрес и порт сервера
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-p', default=DEFAULT_PORT, type=int, nargs='?')
+    parser.add_argument('-a', default='', nargs='?')
+
+    namespace = parser.parse_args(sys.argv[1:])
+    addr = namespace.a
+    port = namespace.p
+
+    # Валидация номера порта
+    if port < 1024 or port > 65535:
+        server_logger.critical(f'Попытка запуска сервера с указанием неподходящего порта '
+                               f'{port}. Допустимы адреса с 1024 до 65535.')
+        sys.exit(1)
+
+    return addr, port
 
 
 if __name__ == '__main__':
 
+    # Извлекает ip-адрес и порт из командной строки
+    listen_addr, listen_port = parse_cmd_arguments()
+
     # Создает TCP-сокет сервера
     server_tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    # Извлекает ip-адрес из командной строки
-    try:
-        listen_addr = sys.argv[1]
-    except IndexError:
-        listen_addr = ''
+    # Связывает сокет с ip-адресом и портом сервера
+    server_tcp.bind((listen_addr, listen_port))
 
-    # Извлекает порт из командной строки
-    try:
-        listen_port = int(sys.argv[2])
-        if listen_port < 1024 or listen_port > 65535:
-            server_logger.critical(f'Попытка запуска сервера с указанием неподходящего порта '
-                                   f'{listen_port}. Допустимы адреса с 1024 до 65535.')
-            raise ValueError
-    except IndexError:
-        listen_port = DEFAULT_PORT
-    except ValueError:
-        print('Порт должен быть целым числом в диапазоне (1024; 65535).')
-        sys.exit(0)
+    # Таймаут для операций с сокетом
+    server_tcp.settimeout(0.5)
+
+    # Запускает режим прослушивания
+    server_tcp.listen(MAX_CONNECTIONS)
 
     server_logger.info(f'Запущен сервер, порт для подключений: {listen_port}, '
                        f'адрес с которого принимаются подключения: {listen_addr}. '
                        f'Если адрес не указан, принимаются соединения с любых адресов.')
 
-    # Связывает сокет с ip-адресом и портом сервера
-    server_tcp.bind((listen_addr, listen_port))
+    print(f'Запущен сервер, порт для подключений: {listen_port}, '
+          f'адрес с которого принимаются подключения: {listen_addr}.')
 
-    # Запускает режим прослушивания
-    server_tcp.listen(MAX_CONNECTIONS)
+    # Список клиентов и очередь сообщений
+    all_clients = []
+    all_messages = []
 
     while True:
         # Принимает запрос на соединение
-        # Возвращает кортеж (новый сокет, адрес клиента)
-        client, client_addr = server_tcp.accept()
-        server_logger.info(f'Установлено соедение с клиентов {client_addr}')
-
+        # Возвращает кортеж (новый TCP-сокет клиента, адрес клиента)
         try:
-            # Принимает сообщение от клиента
-            message_from_client = receive_message(client)
-            server_logger.debug(f'Получено сообщение {message_from_client}')
-            print(message_from_client)
+            client_tcp, client_addr = server_tcp.accept()
+        except OSError:
+            pass
+        else:
+            server_logger.info(f'Установлено соедение с клиентом {client_addr}')
+            print(f'Установлено соедение с клиентом {client_addr}')
+            all_clients.append(client_tcp)
 
-            # Формирует ответ клиенту
-            response = parse_client_msg(message_from_client)
-            server_logger.info(f'Cформирован ответ клиенту {response}')
-            send_message(client, response)
+        r_clients = []
+        w_clients = []
+        errs = []
 
-            server_logger.debug(f'Соединение с клиентом {client_addr} закрывается.')
-            client.close()
-        except json.JSONDecodeError:
-            server_logger.error(f'Не удалось декодировать json-строку, полученную от '
-                                f'клиента {client_addr}. Соединение закрывается.')
-            client.close()
+        # Запрашивает информацию о готовности к вводу, выводу и о наличии исключений для группы дескрипторов сокетов
+        try:
+            if all_clients:
+                r_clients, w_clients, errs = select.select(all_clients, all_clients, [], 0)
+        except OSError:
+            pass
+
+        # Чтение запросов из списка клиентов
+        if r_clients:
+            for r_sock in r_clients:
+                try:
+                    parse_client_msg(receive_message(r_sock), all_messages, r_sock)
+                except Exception as ex:
+                    server_logger.error(f'Клиент отключился от сервера. '
+                                        f'Тип исключения: {type(ex).__name__}, аргументы: {ex.args}')
+                    all_clients.remove(r_sock)
+
+        # Обойдёт список клиентов, читающих из сокета
+        # Эхо-ответ сервера клиентам, от которых были запросы
+        if all_messages and w_clients:
+            response_message = {
+                ACTION: MESSAGE,
+                SENDER: all_messages[0][0],
+                TIME: time.time(),
+                MESSAGE_TEXT: all_messages[0][1]
+            }
+
+            del all_messages[0]
+
+            for w_sock in w_clients:
+                try:
+                    server_logger.info(f'Сформирован ответ клиенту: {response_message}')
+                    print(f'Сформирован ответ клиенту {response_message}')
+                    send_message(w_sock, response_message)
+                except Exception as ex:
+                    server_logger.error(f'Клиент отключился от сервера. '
+                                        f'Тип исключения: {type(ex).__name__}, аргументы: {ex.args}')
+                    all_clients.remove(w_sock)
