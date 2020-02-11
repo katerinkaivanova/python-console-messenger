@@ -13,12 +13,13 @@ ENCODING = 'utf-8'
 # Уровень логирования
 LOGGING_LEVEL = logging.DEBUG
 
-# Прококол JIM основные ключи:
+# Протокол JIM основные ключи:
 ACTION = 'action'
 TIME = 'time'
 USER = 'user'
 ACCOUNT_NAME = 'account_name'
-SENDER = 'sender'
+SENDER = 'from'
+DESTINATION = 'to'
 
 # Прочие ключи, используемые в протоколе
 PRESENCE = 'presence'
@@ -26,3 +27,13 @@ RESPONSE = 'response'
 ERROR = 'error'
 MESSAGE = 'message'
 MESSAGE_TEXT = 'message_text'
+EXIT = 'exit'
+
+# Ответы сервера
+RESPONSE_200 = {
+    RESPONSE: 200
+}
+RESPONSE_400 = {
+    RESPONSE: 400,
+    ERROR: None
+}
