@@ -20,21 +20,26 @@ while True:
         bash_path = os.getcwd() + '/' + 'run.sh'
 
         server_start = f'python {server_path}'
-        client_send_start = f'python {client_path} -m send'
-        client_listen_start = f'python {client_path} -m listen'
+        client_one_start = f'python {client_path} -n test1'
+        client_two_start = f'python {client_path} -n test2'
+        client_three_start = f'python {client_path} -n test3'
 
         # shell=True неявно запускает процесс /bin/sh
         all_processes.append(subprocess.Popen(f'{bash_path} {server_start}', stdout=subprocess.PIPE, shell=True))
-        time.sleep(1)
+        time.sleep(0.5)
 
-        for i in range(1):
-            all_processes.append(subprocess.Popen(f'{bash_path} {client_send_start}', stdout=subprocess.PIPE, shell=True))
-            time.sleep(1)
-            all_processes.append(subprocess.Popen(f'{bash_path} {client_listen_start}', stdout=subprocess.PIPE, shell=True))
+        all_processes.append(subprocess.Popen(f'{bash_path} {client_one_start}', stdout=subprocess.PIPE, shell=True))
+        time.sleep(0.5)
+
+        all_processes.append(subprocess.Popen(f'{bash_path} {client_two_start}', stdout=subprocess.PIPE, shell=True))
+        time.sleep(0.5)
+
+        all_processes.append(subprocess.Popen(f'{bash_path} {client_three_start}', stdout=subprocess.PIPE, shell=True))
 
         print(all_processes)
 
     elif action == 'x':
+        # останавливается процесс /bin/sh, процессы клиентов и сервера продолжают работать (**доработать**)
         for p in all_processes:
             main_process = psutil.Process(p.pid)
             print(print(p.pid), main_process)
